@@ -5492,9 +5492,9 @@ GLGE.Material.prototype.getFragmentShader=function(lights){
 	shader=shader+"float dotN,spotEffect;";
 	shader=shader+"vec3 lightvec=vec3(0.0,0.0,0.0);";
 	shader=shader+"vec3 viewvec=vec3(0.0,0.0,0.0);";
-	shader=shader+"float spotmul=0;";
-	shader=shader+"float spotsampleX=0;";
-	shader=shader+"float spotsampleY=0;";
+	shader=shader+"float spotmul=0.0;";
+	shader=shader+"float spotsampleX=0.0;";
+	shader=shader+"float spotsampleY=0.0;";
 	shader=shader+"int cnt=0;";
 	for(var i=0; i<lights.length;i++){
 	
@@ -5532,17 +5532,17 @@ GLGE.Material.prototype.getFragmentShader=function(lights){
 				shader=shader+"if(castshadows"+i+"){\n";
 				shader=shader+"vec4 dist=texture2D(TEXTURE"+shadowlights[i]+", (((spotcoord"+i+".xy)/spotcoord"+i+".w)+1.0)/2.0);\n";
 				shader=shader+"float depth = dot(dist, vec4(0.000000059604644775390625,0.0000152587890625,0.00390625,1.0))*100.0;\n";
-				shader=shader+"spotmul=0;\n";
+				shader=shader+"spotmul=0.0;\n";
 				softness=0.005;
-				shader=shader+"if((depth+shadowbias"+i+"-length(lightvec"+i+"))<0.0) spotmul+=1/(shadowsamples"+i+"*2.0+1.0);\n";
+				shader=shader+"if((depth+shadowbias"+i+"-length(lightvec"+i+"))<0.0) spotmul+=1.0/(shadowsamples"+i+"*2.0+1.0);\n";
 				shader=shader+"for(cnt=0; cnt<shadowsamples"+i+"*2; cnt++){;\n";
 					shader=shader+"spotsampleX=(fract(sin(dot(spotcoord"+i+".xy + vec2(float(cnt)),vec2(12.9898,78.233))) * 43758.5453)-0.5)*2.0;\n"; //generate random number
 					shader=shader+"spotsampleY=(fract(sin(dot(spotcoord"+i+".yx + vec2(float(cnt)),vec2(12.9898,78.233))) * 43758.5453)-0.5)*2.0;\n"; //generate random number
 					shader=shader+"dist=texture2D(TEXTURE"+shadowlights[i]+", (((spotcoord"+i+".xy)/spotcoord"+i+".w)+1.0)/2.0+vec2(shadowsoftness"+i+"*spotsampleX,shadowsoftness"+i+"*spotsampleY));\n";
 					shader=shader+"depth = dot(dist, vec4(0.000000059604644775390625,0.0000152587890625,0.00390625,1.0))*100.0;\n";
-					shader=shader+"if((depth+shadowbias"+i+"-length(lightvec"+i+"))<0.0) spotmul+=1/(shadowsamples"+i+"*2.0+1.0);\n";
+					shader=shader+"if((depth+shadowbias"+i+"-length(lightvec"+i+"))<0.0) spotmul+=1.0/(shadowsamples"+i+"*2.0+1.0);\n";
 				shader=shader+"};\n";
-				shader=shader+"spotEffect=spotEffect*(1-spotmul);\n";
+				shader=shader+"spotEffect=spotEffect*(1.0-spotmul);\n";
 				shader=shader+"}";
 			}
 
