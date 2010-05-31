@@ -116,7 +116,7 @@ GLGE.Collada.prototype.parseArray=function(node){
 		child=child.nextSibling;
 		if(currentArray[0]=="") currentArray.unshift();
 		if(child) prev=currentArray.pop();
-		for(i=0;i<currentArray.length;i++) output.push(currentArray[i]);
+		for(i=0;i<currentArray.length;i++) if(currentArray[i]!="") output.push(currentArray[i]);
 	}
 	return output;
 };
@@ -190,8 +190,10 @@ GLGE.Collada.prototype.getSource=function(id){
 			for(var i=0;i<params.length;i++){if(params[i].hasAttribute("name")) pmask.push({type:params[i].getAttribute("type"),name:params[i].getAttribute("name")}); else pmask.push(false);}
 			value={array:value,stride:stride,offset:offset,count:count,pmask:pmask,type:type};
 		}	
+
 		element.jsArray=value;
 	}
+	
 	
 	return element.jsArray;
 };
@@ -346,6 +348,7 @@ GLGE.Collada.prototype.getMeshes=function(id,skeletonData){
 		for(n=0;n<outputData.POSITION.length/3;n++) faces.push(n);
 		//create mesh
 		var trimesh=new GLGE.Mesh();
+		
 		trimesh.setPositions(outputData.POSITION);
 		trimesh.setNormals(outputData.NORMAL);
 		if(outputData.TEXCOORD0) trimesh.setUV(outputData.TEXCOORD0);
@@ -359,6 +362,7 @@ GLGE.Collada.prototype.getMeshes=function(id,skeletonData){
 		
 		trimesh.setFaces(faces);
 		trimesh.matName=triangles[i].getAttribute("material");
+						
 		meshes.push(trimesh);
 	}
 	
@@ -1090,7 +1094,13 @@ GLGE.Collada.prototype.getInstanceController=function(node){
 	var skeletons=node.getElementsByTagName("skeleton");
 	var joints=controller.getElementsByTagName("joints")[0];
 	var inputs=joints.getElementsByTagName("input");
-	var bindShapeMatrix=this.parseArray(controller.getElementsByTagName("bind_shape_matrix")[0]);
+	var bindShapeMatrix;
+	if(controller.getElementsByTagName("bind_shape_matrix").length>0){
+		bindShapeMatrix=this.parseArray(controller.getElementsByTagName("bind_shape_matrix")[0]);
+	}else{
+		//assume identity
+		bindShapeMatrix=GLGE.identMatrix();
+	}
 
 	var inverseBindMatrix=[bindShapeMatrix];
 	var joints=[new GLGE.Group()];
@@ -1138,7 +1148,7 @@ GLGE.Collada.prototype.getInstanceController=function(node){
 					}
 				}
 				for(var k=0;k<jointdata.array.length;k=k+jointdata.stride){
-					joints.push(this.getNode(sidArray[jointdata.array[k]],true));
+					if(jointdata.array[k]!="") joints.push(this.getNode(sidArray[jointdata.array[k]],true));
 				}
 			}
 
@@ -1324,7 +1334,7 @@ GLGE.Collada.prototype.initVisualScene=function(){
 * @private
 */
 GLGE.Collada.prototype.loaded=function(url,xml){
-	GLGE.ColladaDocuments[url]=xml; //cache the document
+	//GLGE.ColladaDocuments[url]=xml; //cache the document --- prevents multiple objects remove for now
 	this.xml=xml;
 	this.initVisualScene();
 	this.getAnimations();

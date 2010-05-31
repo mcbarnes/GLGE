@@ -2496,9 +2496,11 @@ GLGE.Text.prototype.GLRender=function(gl,renderType,pickindex){
 		gl.uniformMatrix4fv(mUniform, true, this.GLShaderProgram.glarrays.mMatrix);
 		
 		var mUniform = GLGE.getUniformLocation(gl,this.GLShaderProgram, "PMatrix");
+
 		if(!this.GLShaderProgram.glarrays.pMatrix) this.GLShaderProgram.glarrays.pMatrix=new WebGLFloatArray(gl.scene.camera.getProjectionMatrix());
 			else GLGE.mat4gl(gl.scene.camera.getProjectionMatrix(),this.GLShaderProgram.glarrays.pMatrix);
 		gl.uniformMatrix4fv(mUniform, true, this.GLShaderProgram.glarrays.pMatrix);
+
 		
 		var farUniform = GLGE.getUniformLocation(gl,this.GLShaderProgram, "far");
 		gl.uniform1f(farUniform, gl.scene.camera.getFar());
@@ -3050,6 +3052,7 @@ GLGE.Object.prototype.GLUniforms=function(gl,renderType,pickindex){
 		if(!program.glarrays.mvMatrix) program.glarrays.mvMatrix=new WebGLFloatArray(mvMatrix);
 			else GLGE.mat4gl(mvMatrix,program.glarrays.mvMatrix);
 		gl.uniformMatrix4fv(mvUniform, true, program.glarrays.mvMatrix);
+
 	    
 		//invCamera matrix
 		if(!this.caches.envMat){
@@ -4354,7 +4357,7 @@ GLGE.Scene.prototype.render=function(gl){
 	this.camera.setProjectionMatrix(cameraPMatrix);
 	
 	gl.clearDepth(1.0);
-	gl.depthFunc(gl.LESS);
+	gl.depthFunc(gl.LEQUAL);
 	gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 	this.renderPass(gl,renderObject,this.renderer.canvas.width,this.renderer.canvas.height);	
 }
@@ -4502,14 +4505,22 @@ GLGE.Scene.prototype.pick=function(x,y){
 * @class Sets the scene to render
 * @param {GLGE.Scene} scene The scene to be rendered
 */
-GLGE.Renderer=function(canvas){
+GLGE.Renderer=function(canvas,error){
 	this.canvas=canvas;
 	try {
 		this.gl = canvas.getContext("experimental-webgl",{alpha:false,depth:true,stencil:true,antialias:true,premultipliedAlpha:true});
 	} catch(e) {}
-	if (!this.gl) {
-		alert("What, What Whaaat? No WebGL!");
-		throw "cannot create webgl context";
+	if(!this.gl) {
+		if(!error){
+			var div=document.createElement("div");
+			div.setAttribute("style","position: absolute; top: 10px; left: 10px; font-family: sans-serif; font-size: 14px; padding: 10px;background-color: #fcffcb;color: #800; width: 200px; border:2px solid #f00");
+			div.innerHTML="Cannot detect webgl please download a compatible browser";
+			document.getElementsByTagName("body")[0].appendChild(div);
+			throw "cannot create webgl context";
+		}else{
+			error();
+			throw "cannot create webgl context";
+		}
 	}
 	//this.gl = WebGLDebugUtils.makeDebugContext(this.gl);
 	//this.gl.setTracing(true);
@@ -4525,6 +4536,18 @@ GLGE.Renderer=function(canvas){
 		this.gl.getShaderParameter = this.gl.getShaderi
 	}
 	// End of Chrome compatibility code
+	
+	//Fix chrome bug remove when fixed
+	this.gl.uniformMatrix4fvX=this.gl.uniformMatrix4fv
+	this.gl.uniformMatrix4fv=function(uniform,transpose,array){
+		if(!transpose){
+			this.uniformMatrix4fvX(uniform,false,array);
+		}else{
+			GLGE.mat4gl(GLGE.transposeMat4(array),array);
+			this.uniformMatrix4fvX(uniform,false,array);
+		}
+	}
+	//end chrome fix
 	
 	//set up defaults
 	this.gl.clearDepth(1.0);
@@ -6046,7 +6069,7 @@ GLGE.Material.prototype.getFragmentShader=function(lights){
 	shader=shader+"lightvalue = (lightvalue)*ref;\n";
 	shader=shader+"if(em>0.0){lightvalue=vec3(1.0,1.0,1.0);  fogfact=1.0;}\n";
 	shader=shader+"gl_FragColor =vec4(specvalue.rgb+color.rgb*(em+1.0)*lightvalue.rgb,al)*fogfact+vec4(fogcolor,al)*(1.0-fogfact);\n";
-	//shader=shader+"gl_FragColor =vec4(textureCoords.xy,0.0,1.0);\n";
+	//shader=shader+"gl_FragColor =vec4(baseColor.rgb,1.0);\n";
 
 	shader=shader+"}\n";
 	return shader;
